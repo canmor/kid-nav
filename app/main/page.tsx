@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Bus, Train, Car, MapPin, AlertTriangle } from "lucide-react"
 
-const commonDestinations = ["幼儿园", "公园", "超市", "游乐场", "奶奶家", "图书馆"]
+const commonDestinations = ["幼儿园", "公园", "超市", "游乐场", "科技馆"]
 
 // 借口生成器
 const excuses = {
@@ -46,24 +46,21 @@ export default function MainPage() {
   }, [router])
 
   const handlePlanRoute = () => {
-    if (!destination) return
+    if (!destination || !settings) return
 
-    // 为每种未选择的交通方式生成借口
+    // 获取用户选择的交通方式
+    const selectedTransport = settings.selectedTransport
+
+    // 为其他交通方式生成借口
     const newExcuses = {}
+    const allTransports = ["bus", "subway", "car"]
 
-    if (settings) {
-      Object.keys(settings.transportOptions).forEach((option) => {
-        if (settings.transportOptions[option]) {
-          // 随机决定这个选项是否可用
-          const isAvailable = Math.random() > 0.3
-
-          if (!isAvailable) {
-            const randomIndex = Math.floor(Math.random() * excuses[option].length)
-            newExcuses[option] = excuses[option][randomIndex]
-          }
-        }
-      })
-    }
+    allTransports.forEach((transport) => {
+      if (transport !== selectedTransport) {
+        const randomExcuseIndex = Math.floor(Math.random() * excuses[transport].length)
+        newExcuses[transport] = excuses[transport][randomExcuseIndex]
+      }
+    })
 
     setGeneratedExcuses(newExcuses)
     setShowResults(true)
@@ -126,6 +123,14 @@ export default function MainPage() {
             </div>
           ) : (
             <div className="space-y-6">
+              {/* 建议的交通方式提示 */}
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+                <p className="text-green-700 font-medium">
+                  建议使用
+                  {settings.selectedTransport === "bus" ? "公交车" : settings.selectedTransport === "subway" ? "地铁" : "自驾"}
+                  前往{destination}
+                </p>
+              </div>
               {/* Cartoon Satellite Map Visualization */}
               <div className="relative w-full h-64 rounded-lg overflow-hidden border mb-4">
                 <div className="absolute inset-0">
@@ -200,16 +205,18 @@ export default function MainPage() {
                   </svg>
 
                   {/* Start point */}
-                  <div className="absolute top-1/2 left-6 w-4 h-4 bg-blue-500 rounded-full transform -translate-y-1/2 z-10"></div>
+                  <div className="absolute top-1/2 left-6 w-4 h-4 bg-blue-500 rounded-full transform -translate-y-1/2 z-30 shadow-lg">
+                    <MapPin className="h-6 w-6 text-blue-500 absolute -top-6 -left-1" />
+                  </div>
 
                   {/* Destination point */}
-                  <div className="absolute top-1/2 right-6 w-4 h-4 bg-red-500 rounded-full transform -translate-y-1/2 z-10">
+                  <div className="absolute top-1/2 right-6 w-4 h-4 bg-red-500 rounded-full transform -translate-y-1/2 z-30 shadow-lg">
                     <MapPin className="h-6 w-6 text-red-500 absolute -top-6 -left-1" />
                   </div>
 
                   {/* Route lines for different transportation - now with curves and icons */}
-                  {settings.transportOptions.bus && !generatedExcuses.bus && (
-                    <div className="absolute top-1/3 left-0 right-0 h-20 z-20">
+                  {settings.selectedTransport === "bus" && (
+                    <div className="absolute top-1/2 left-0 right-0 h-20 z-20">
                       <svg width="100%" height="100%" viewBox="0 0 400 80" preserveAspectRatio="none">
                         <path
                           d="M30,20 C100,0 150,60 200,30 C250,0 300,50 370,20"
@@ -220,17 +227,14 @@ export default function MainPage() {
                         />
                       </svg>
                       {/* Bus icons along the route */}
-                      <div className="absolute top-0 left-1/4 bg-white rounded-full p-1 shadow-md">
-                        <Bus className="h-6 w-6 text-blue-500" />
-                      </div>
-                      <div className="absolute top-1/4 left-2/4 bg-white rounded-full p-1 shadow-md">
-                        <Bus className="h-6 w-6 text-blue-500" />
+                      <div className="absolute top-0 left-2/4 bg-white rounded-full p-1 shadow-xl">
+                        <Bus className="h-8 w-8 text-blue-500" />
                       </div>
                     </div>
                   )}
 
-                  {settings.transportOptions.subway && !generatedExcuses.subway && (
-                    <div className="absolute top-1/2 left-0 right-0 h-20 z-20">
+                  {settings.selectedTransport === "subway" && (
+                    <div className="absolute top-1/3 left-0 right-0 h-20 z-20">
                       <svg width="100%" height="100%" viewBox="0 0 400 80" preserveAspectRatio="none">
                         <path
                           d="M30,40 C120,70 180,10 250,40 C320,70 350,30 370,40"
@@ -240,17 +244,14 @@ export default function MainPage() {
                         />
                       </svg>
                       {/* Subway icons along the route */}
-                      <div className="absolute top-1/4 left-1/3 bg-white rounded-full p-1 shadow-md">
-                        <Train className="h-6 w-6 text-purple-500" />
-                      </div>
-                      <div className="absolute top-0 left-3/5 bg-white rounded-full p-1 shadow-md">
-                        <Train className="h-6 w-6 text-purple-500" />
+                      <div className="absolute top-0 left-1/2 bg-white rounded-full p-1 shadow-xl">
+                        <Train className="h-8 w-8 text-purple-500" />
                       </div>
                     </div>
                   )}
 
-                  {settings.transportOptions.car && !generatedExcuses.car && (
-                    <div className="absolute top-2/3 left-0 right-0 h-20 z-20">
+                  {settings.selectedTransport === "car" && (
+                    <div className="absolute top-1/3 left-0 right-0 h-20 z-20">
                       <svg width="100%" height="100%" viewBox="0 0 400 80" preserveAspectRatio="none">
                         <path
                           d="M30,60 C80,20 150,80 250,20 C350,60 350,40 370,60"
@@ -260,48 +261,45 @@ export default function MainPage() {
                         />
                       </svg>
                       {/* Car icons along the route */}
-                      <div className="absolute top-0 left-2/5 bg-white rounded-full p-1 shadow-md">
-                        <Car className="h-6 w-6 text-emerald-500" />
-                      </div>
-                      <div className="absolute top-1/4 right-1/4 bg-white rounded-full p-1 shadow-md">
-                        <Car className="h-6 w-6 text-emerald-500" />
+                      <div className="absolute top-1/4 right-1/4 bg-white rounded-full p-1 shadow-xl">
+                        <Car className="h-8 w-8 text-emerald-500" />
                       </div>
                     </div>
                   )}
 
                   {/* Unavailable transportation indicators */}
-                  {settings.transportOptions.bus && generatedExcuses.bus && (
-                    <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/90 rounded-lg p-2 shadow-md border border-yellow-300 flex items-center space-x-2 max-w-[80%] z-30">
+                  {generatedExcuses.bus && (
+                    <div className="absolute top-10 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/90 rounded-lg p-1 shadow-md border border-yellow-300 flex items-center space-x-2 max-w-[80%] z-30">
                       <div className="flex-shrink-0">
-                        <Bus className="h-8 w-8 text-gray-400" />
-                        <AlertTriangle className="h-5 w-5 text-yellow-600 absolute -top-1 -right-1" />
+                        <Bus className="h-6 w-6 text-gray-400" />
+                        <AlertTriangle className="h-5 w-5 text-yellow-600 absolute -top-2 -right-1" />
                       </div>
-                      <p className="text-xs font-medium text-gray-700">{generatedExcuses.bus}</p>
+                      {/* <p className="text-xs font-medium text-gray-700">{generatedExcuses.bus}</p> */}
                     </div>
                   )}
 
-                  {settings.transportOptions.subway && generatedExcuses.subway && (
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/90 rounded-lg p-2 shadow-md border border-yellow-300 flex items-center space-x-2 max-w-[80%] z-30">
+                  {generatedExcuses.subway && (
+                    <div className="absolute top-20 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/90 rounded-lg p-1 shadow-md border border-yellow-300 flex items-center space-x-2 max-w-[80%] z-30">
                       <div className="flex-shrink-0">
-                        <Train className="h-8 w-8 text-gray-400" />
-                        <AlertTriangle className="h-5 w-5 text-yellow-600 absolute -top-1 -right-1" />
+                        <Train className="h-6 w-6 text-gray-400" />
+                        <AlertTriangle className="h-5 w-5 text-yellow-600 absolute -top-2 -right-1" />
                       </div>
-                      <p className="text-xs font-medium text-gray-700">{generatedExcuses.subway}</p>
+                      {/* <p className="text-xs font-medium text-gray-700">{generatedExcuses.subway}</p> */}
                     </div>
                   )}
 
-                  {settings.transportOptions.car && generatedExcuses.car && (
-                    <div className="absolute bottom-1/4 left-1/2 transform -translate-x-1/2 translate-y-1/2 bg-white/90 rounded-lg p-2 shadow-md border border-yellow-300 flex items-center space-x-2 max-w-[80%] z-30">
+                  {generatedExcuses.car && (
+                    <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 translate-y-1/2 bg-white/90 rounded-lg p-1 shadow-md border border-yellow-300 flex items-center space-x-2 max-w-[80%] z-30">
                       <div className="flex-shrink-0">
-                        <Car className="h-8 w-8 text-gray-400" />
-                        <AlertTriangle className="h-5 w-5 text-yellow-600 absolute -top-1 -right-1" />
+                        <Car className="h-6 w-6 text-gray-400" />
+                        <AlertTriangle className="h-5 w-5 text-yellow-600 absolute -top-2 -right-1" />
                       </div>
-                      <p className="text-xs font-medium text-gray-700">{generatedExcuses.car}</p>
+                      {/* <p className="text-xs font-medium text-gray-700">{generatedExcuses.car}</p> */}
                     </div>
                   )}
 
                   {/* Legend */}
-                  <div className="absolute bottom-2 left-2 right-2 bg-white/80 p-2 rounded text-xs flex flex-wrap gap-x-3 gap-y-1 z-30">
+                  {/* <div className="absolute bottom-2 left-2 right-2 bg-white/80 p-2 rounded text-xs flex flex-wrap gap-x-3 gap-y-1 z-30">
                     <div className="flex items-center">
                       <div className="w-2 h-2 bg-blue-500 rounded-full mr-1"></div>
                       <span>当前位置</span>
@@ -310,95 +308,91 @@ export default function MainPage() {
                       <div className="w-2 h-2 bg-red-500 rounded-full mr-1"></div>
                       <span>{destination}</span>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
-              <h3 className="font-medium text-center mb-4">可选的出行方式</h3>
-
-              {settings.transportOptions.bus && (
-                <div className={`p-4 rounded-lg border ${generatedExcuses.bus ? "bg-muted/50" : "bg-primary/5"}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Bus className={`h-8 w-8 ${generatedExcuses.bus ? "text-muted-foreground" : "text-primary"}`} />
-                      <div>
-                        <p className="font-medium">公交车</p>
-                        {!generatedExcuses.bus && (
-                          <p className="text-sm text-muted-foreground">{getRandomRoute(settings.busRoutes)}路</p>
-                        )}
-                      </div>
+              {settings.selectedTransport !== "bus" && 
+              <div className={`p-4 rounded-lg border ${generatedExcuses.bus ? "bg-muted/50" : "bg-primary/5"}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Bus className={`h-8 w-8 ${generatedExcuses.bus ? "text-muted-foreground" : "text-primary"}`} />
+                    <div>
+                      <p className="font-medium">公交车</p>
+                      {!generatedExcuses.bus && (
+                        <p className="text-sm text-muted-foreground">{getRandomRoute(settings.busRoutes)}路</p>
+                      )}
                     </div>
-
-                    {generatedExcuses.bus && (
-                      <div className="flex items-center text-yellow-600">
-                        <AlertTriangle className="h-5 w-5 mr-1" />
-                      </div>
-                    )}
                   </div>
 
                   {generatedExcuses.bus && (
-                    <div className="mt-2 text-sm bg-yellow-50 p-2 rounded border border-yellow-200">
-                      {generatedExcuses.bus}
+                    <div className="flex items-center text-yellow-600">
+                      <AlertTriangle className="h-5 w-5 mr-1" />
                     </div>
                   )}
                 </div>
-              )}
 
-              {settings.transportOptions.subway && (
-                <div className={`p-4 rounded-lg border ${generatedExcuses.subway ? "bg-muted/50" : "bg-primary/5"}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Train
-                        className={`h-8 w-8 ${generatedExcuses.subway ? "text-muted-foreground" : "text-primary"}`}
-                      />
-                      <div>
-                        <p className="font-medium">地铁</p>
-                        {!generatedExcuses.subway && (
-                          <p className="text-sm text-muted-foreground">{getRandomRoute(settings.subwayLines)}</p>
-                        )}
-                      </div>
+                {generatedExcuses.bus && (
+                  <div className="mt-2 text-sm bg-yellow-50 p-2 rounded border border-yellow-200">
+                    {generatedExcuses.bus}
+                  </div>
+                )}
+              </div>}
+
+              {settings.selectedTransport !== "subway" && 
+              <div className={`p-4 rounded-lg border ${generatedExcuses.subway ? "bg-muted/50" : "bg-primary/5"}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Train
+                      className={`h-8 w-8 ${generatedExcuses.subway ? "text-muted-foreground" : "text-primary"}`}
+                    />
+                    <div>
+                      <p className="font-medium">地铁</p>
+                      {!generatedExcuses.subway && (
+                        <p className="text-sm text-muted-foreground">{getRandomRoute(settings.subwayLines)}</p>
+                      )}
                     </div>
-
-                    {generatedExcuses.subway && (
-                      <div className="flex items-center text-yellow-600">
-                        <AlertTriangle className="h-5 w-5 mr-1" />
-                      </div>
-                    )}
                   </div>
 
                   {generatedExcuses.subway && (
-                    <div className="mt-2 text-sm bg-yellow-50 p-2 rounded border border-yellow-200">
-                      {generatedExcuses.subway}
+                    <div className="flex items-center text-yellow-600">
+                      <AlertTriangle className="h-5 w-5 mr-1" />
                     </div>
                   )}
                 </div>
-              )}
 
-              {settings.transportOptions.car && (
-                <div className={`p-4 rounded-lg border ${generatedExcuses.car ? "bg-muted/50" : "bg-primary/5"}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Car className={`h-8 w-8 ${generatedExcuses.car ? "text-muted-foreground" : "text-primary"}`} />
-                      <div>
-                        <p className="font-medium">自驾</p>
-                        {!generatedExcuses.car && <p className="text-sm text-muted-foreground">预计用时15分钟</p>}
-                      </div>
+                {generatedExcuses.subway && (
+                  <div className="mt-2 text-sm bg-yellow-50 p-2 rounded border border-yellow-200">
+                    {generatedExcuses.subway}
+                  </div>
+                )}
+              </div>}
+
+              {settings.selectedTransport !== "car" && 
+              <div className={`p-4 rounded-lg border ${generatedExcuses.car ? "bg-muted/50" : "bg-primary/5"}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Car className={`h-8 w-8 ${generatedExcuses.car ? "text-muted-foreground" : "text-primary"}`} />
+                    <div>
+                      <p className="font-medium">自驾</p>
+                      {!generatedExcuses.car && <p className="text-sm text-muted-foreground">预计用时15分钟</p>}
                     </div>
-
-                    {generatedExcuses.car && (
-                      <div className="flex items-center text-yellow-600">
-                        <AlertTriangle className="h-5 w-5 mr-1" />
-                      </div>
-                    )}
                   </div>
 
                   {generatedExcuses.car && (
-                    <div className="mt-2 text-sm bg-yellow-50 p-2 rounded border border-yellow-200">
-                      {generatedExcuses.car}
+                    <div className="flex items-center text-yellow-600">
+                      <AlertTriangle className="h-5 w-5 mr-1" />
                     </div>
                   )}
                 </div>
-              )}
+
+                {generatedExcuses.car && (
+                  <div className="mt-2 text-sm bg-yellow-50 p-2 rounded border border-yellow-200">
+                    {generatedExcuses.car}
+                  </div>
+                )}
+              </div>}
+
             </div>
           )}
         </CardContent>
