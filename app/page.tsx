@@ -14,13 +14,6 @@ export default function HomePage() {
           <CardDescription>帮助家长轻松应对孩子的出行小脾气</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center space-y-6">
-          <div className="w-full max-w-xs">
-            <img
-              src="/placeholder.svg?height=200&width=300"
-              alt="孩子和家长出行插图"
-              className="w-full h-auto rounded-lg shadow-md"
-            />
-          </div>
           <div className="text-center space-y-2">
             <h2 className="text-lg font-medium">轻松应对孩子出行执着</h2>
             <p className="text-sm text-muted-foreground">通过模拟出行选择和提供"合理"的借口，帮助转移孩子注意力</p>
